@@ -82,18 +82,15 @@ open class JXPhotoBrowserImageCell: UIView, UIScrollViewDelegate, UIGestureRecog
         addPanGesture()
         
         // 双击手势
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(onDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
         addGestureRecognizer(doubleTap)
         
         // 单击手势
-        let singleTap = UITapGestureRecognizer(target: self, action: #selector(onSingleTap(_:)))
-        singleTap.require(toFail: doubleTap)
         addGestureRecognizer(singleTap)
     }
     
     // 长按事件
     public typealias LongPressAction = (JXPhotoBrowserImageCell, UILongPressGestureRecognizer) -> Void
+    public typealias SinglePressAction = (JXPhotoBrowserImageCell, UITapGestureRecognizer) -> Void
     
     /// 长按时回调。赋值时自动添加手势，赋值为nil时移除手势
     open var longPressedAction: LongPressAction? {
@@ -106,9 +103,32 @@ open class JXPhotoBrowserImageCell: UIView, UIScrollViewDelegate, UIGestureRecog
         }
     }
     
+    open var singlePressedAction: SinglePressAction? {
+        didSet {
+            if oldValue != nil && singlePressedAction == nil {
+                removeGestureRecognizer(singleTap)
+            } else if oldValue == nil && singlePressedAction != nil {
+                addGestureRecognizer(singleTap)
+            }
+        }
+    }
+    
     /// 已添加的长按手势
     private lazy var longPress: UILongPressGestureRecognizer = {
         return UILongPressGestureRecognizer(target: self, action: #selector(onLongPress(_:)))
+    }()
+    
+    private lazy var doubleTap : UITapGestureRecognizer = {
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(onDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        return doubleTap
+    }()
+    
+    
+    private lazy var singleTap : UITapGestureRecognizer = {
+        let singleTap = UITapGestureRecognizer(target: self, action: #selector(onSingleTap(_:)))
+        singleTap.require(toFail: doubleTap)
+        return singleTap
     }()
     
     private weak var existedPan: UIPanGestureRecognizer?
@@ -200,7 +220,8 @@ open class JXPhotoBrowserImageCell: UIView, UIScrollViewDelegate, UIGestureRecog
     
     /// 单击
     @objc open func onSingleTap(_ tap: UITapGestureRecognizer) {
-        photoBrowser?.dismiss()
+//        photoBrowser?.dismiss()
+        self.singlePressedAction?(self,tap)
     }
     
     /// 双击
